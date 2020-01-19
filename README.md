@@ -12,21 +12,22 @@ foo@bar:~$ git clone git@github.com:kordaniel/dotfiles.git
 ```
 
 ### Setup
-First of all you should enable the exec bit for the file `tmc-autocomplete.sh` with
+First of all you should enable the exec bit for the file `tmc-autocomplete.sh` with:
 ```console
-chmod ug+x .tmc-autocomplete.sh
+foo@bar:~$ chmod ug+x .tmc-autocomplete.sh
 ```
 
 #### Manual setup
-After cloning the repository you will have an directory called `dotfiles` containing all the dotfiles. Files in the subdirectory `etc` are to be used system wide (placed/linked in /etc), but can usually be set to be user specific as well. Simply create an symbolic link for every dotfile you wish to use:
+After cloning the repository you will have an directory called `dotfiles` containing all the dotfiles. Files in the subdirectory `etc` are to be used system wide (placed/linked inside `/etc`), but can usually be set to be user specific as well. Simply create an symbolic link for every dotfile you wish to use:
 ```console
-foo@bar:~$ ln -sfnv ~/dotfiles/.example ~/.example
+foo@bar:~$ cd dotfiles
+foo@bar:~$ ln -sfnv .example_dotfile ~/.example_dotfile
 
 ```
 Of course as always, remember to take backups before proceeding.
 
 #### Automagic setup
-Inside this repository is the file `setup.sh`. you can run this script with
+Inside this repository is the file `setup.sh`. you can run this script with:
 ```console
 foo@bar:~$ cd dotfiles
 foo@bar:~$ chmod u+x setup.sh
