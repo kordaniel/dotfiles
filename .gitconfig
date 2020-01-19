@@ -1,0 +1,12 @@
+[alias]
+        l = log --pretty=colored
+        
+        # Show the diff between the latest commit and the current state
+        d = !"git diff-index --quiet HEAD -- || clear; git --no-pager diff --patch-with-stat"
+[pretty]
+        colored = format:%Cred%h%Creset %s %Cgreen (%cr) %C(bold blue)%an%Creset
+[user]
+	name = Daniel Korpela
+	email = 42967512+kordaniel@users.noreply.github.com
+[push]
+	default = matching

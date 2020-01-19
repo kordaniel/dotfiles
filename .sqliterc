@@ -1,0 +1,4 @@
+.mode column
+.headers on
+.timer on
+PRAGMA foreign_keys = ON;

@@ -1,0 +1,4 @@
+startup_message off
+# Enable UTF-8 (`screen -U`)
+defutf8 on
+hardstatus alwayslastline "%{k}%-w%{.kY}%n %t%{-}%+w %= %H: %l %d.%m %c"
