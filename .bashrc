@@ -66,7 +66,7 @@ git_branch_clean() {
 
 if [ "$color_prompt" = yes ]; then
   #PS1='${debian_chroot:+($debian_chroot)}\[\033[00m\](\t)\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\W\[\033[00m\]\$ '
-  PS1="\[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\033[00m\](\t)\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w \[\033[00m\]\$(git_branch_clean)\n└─\[\033[01;34m\]\W\[\033[00m\]\$ "
+  PS1="\[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\033[31m\]\t\[\033[1;33m\]/\[\033[01;32m\]\u\[\033[01;33m\]@\[\033[01;32m\]\h\[\033[00m\]:\[\033[01;33m\]\w \[\033[0;36m\]\$(git_branch_clean)\[\033[0;31m\]\n└─[\[\033[01;33m\]\W\\[\033[0;31m\]]\[\033[00m\]\$ "
 else
     PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
 fi
@@ -95,11 +95,6 @@ fi
 
 # colored GCC warnings and errors
 #export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
-
-# some more ls aliases
-alias ll='ls -alF'
-alias la='ls -A'
-alias l='ls -CF'
 
 # Add an "alert" alias for long running commands.  Use like so:
 #   sleep 10; alert
