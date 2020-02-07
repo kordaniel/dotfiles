@@ -84,6 +84,7 @@ set copyindent		" use existing indents for new indents
 set preserveindent	" save as much indent structure as possible
 
 set number		" show linenumbers!!
+set relativenumber
 "set ruler
 set cursorline
 set hlsearch		" highlight search matches
@@ -93,7 +94,9 @@ set noshowmode          " vim:s own infobar(insert) isnt needed with lightline
 
 " Allow backspacing over autoindent, line breaks and start of insert action
 " set backspace=indent,eol, start " TEST SOMETIME, not testet yet
-set visualbell  " use visual bell instead of beeping when doing something wrong
+set visualbell          " use visual bell instead of beeping when doing something wrong
+
+nmap Q <Nop>            "'Q' in normal mode enters Ex mode. Dont need don't want-> unbind"
 
 " turn off search highlight
 " nnoremap <leader><space> :nohlsearch<CR>
