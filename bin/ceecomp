@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# Helper script to compile cpp-files. Takes one argument
+# which is the cpp-file and then compiles it.
+
+# Check that we have exactly one argument
+if [[ $# -ne 1 ]]; then
+  echo "Pleae pass one single cpp-file as argument"
+  exit 1
+fi
+
+# Argument must be a filename that ends in .cpp
+if [[ ! $1 =~ \. ]] || [[ ${1##*.} != "cpp" ]]; then
+  echo "Bad argument. The filename must end in .cpp"
+  exit 1
+fi
+
+input=$1
+output=${1%.*}
+
+# Check that we have an valid name for the output
+if [[ -z "${output// }" ]]; then
+  echo "Bad argument. This script will output an binary"
+  echo "with the same name as the input without the extension."
+  echo "Your argument resulted in an empty filename."
+fi
+
+echo "Attempting to compile $input to $output..."
+
+g++ -Wall -Wextra -Wshadow -fsanitize=undefined $input -o $output -O2
+#g++ -std=c++11 -O2 -Wall $input -o $output
+
+if [[ $? -eq 0 ]]; then
+  #chmod u+x $output
+  echo "All done succesfully"
+else
+  echo "Error compiling"
+fi

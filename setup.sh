@@ -25,7 +25,7 @@
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #
 # USAGE:
-# chmod u+x setup.sh
+# chmod u+x setup.sh <- should not be needed, git should handle
 # ./setup.sh
 #
 # Copyright (C) 2020 Daniel Korpela.
@@ -33,7 +33,7 @@
 # free of charge and without warranty of any kind,
 # to any person obtaining a copy of this script.
 
-BACKUPDIR=~/.dotfiles_backup
+BACKUPDIR=${HOME}/.dotfiles_backup
 
 echo "Attempting to create symlinks"
 echo "-----------------------------"
@@ -45,19 +45,22 @@ if [ ! -d "$BACKUPDIR" ]; then
   echo ""
 fi
 
+if [ ! -d "$BACKUPDIR" ]; then
+  echo "Could not create $BACKUPDIR for backups!"
+  echo "Exiting with nothing done!"
+  exit 1
+fi
+
 for f in .*; do
-  if [[ -f $f ]]
-  then
+  if [[ -f $f ]]; then
     # Backup existing files if they exist
-    if [[ -f ~/$f ]]
-    then
+    if [[ -f ~/$f ]]; then
       echo "Backing up ~/${f}..."
       # Backup the backup..
       [[ -f ${BACKUPDIR}/${f} ]] && mv -v ${BACKUPDIR}/${f} ${BACKUPDIR}/${f}.old
       mv -iv ~/${f} ${BACKUPDIR}/${f}
     
-      if [[ ${BACKUPDIR}/${f} ]]
-      then
+      if [[ ${BACKUPDIR}/${f} ]]; then
         echo "Backup created as ${BACKUPDIR}/${f}"
       else
         echo ""
@@ -74,19 +77,74 @@ for f in .*; do
     echo "Creating symlink..."
     ln -sfnv ${PWD}/${f} ~/${f}
 
-    if [[ ! -f ~/${f} ]]
-    then
+    if [[ ! -f ~/${f} ]]; then
       echo ""
       echo "!!! Something went wrong when trying            !!!"
       echo "!!! to create symlink:                          !!!"
       echo "!!! ${PWD}/${f} ~/${f} !!!"
       echo "!!! Exiting. You should investigate this issue! !!!"
-      exit 1
+      exit 2
     fi
 
     echo "Done!"
     echo ""
   fi
 done
+
+[ ! -d "${HOME}/bin" ] && mkdir ${HOME}/bin
+
+if [ -d "${HOME}/bin" ]; then
+  [ ! -d ${BACKUPDIR}/bin ] && mkdir ${BACKUPDIR}/bin
+  if [ ! -d ${BACKUPDIR}/bin ]; then
+    echo "Could not create ${BACKUPDIR}/bin"
+    echo "Exiting without linking bin-scripts"
+    echo "You should investigate this issue!"
+    exit 2
+  fi
+
+  for f in bin/*; do
+    if [[ -f $f ]]; then
+      # Backup existing files if they exist
+      if [[ -f ${HOME}/${f} ]]; then
+        echo "Backing up ${HOME}/${f}..."
+        # Backup the backup..
+        [[ -f ${BACKUPDIR}/${f} ]] && mv -v ${BACKUPDIR}/${f} ${BACKUPDIR}/${f}.old
+        mv -iv ${HOME}/$f ${BACKUPDIR}/$f
+
+        if [[ ${BACKUPDIR}/${f} ]]; then
+          echo "Backup created as ${BACKUPDIR}/${f}"
+        else
+          echo ""
+          echo "!! Something went wrong when backing up $HOME/$f !!"
+          echo "!! Exiting. You should investigate this issue !!"
+          exit 2
+        fi
+      else
+        echo "File ${HOME}/${f} not found, continuing!"
+      fi
+
+      echo "Creating symlink..."
+      ln -sfnv ${PWD}/${f} ${HOME}/${f}
+    
+      if [[ ! -f ${HOME}/${f} ]]; then
+        echo ""
+        echo "!!! Something went wrong when trying            !!!"
+        echo "!!! to create symlink:                          !!!"
+        echo "!!! ${PWD}/${f} ${HOME}/${f} !!!"
+        echo "!!! Exiting. You should investigate this issure !!!"
+        exit 2
+      fi
+
+      echo "Done!"
+      echo ""
+    fi
+  done
+
+else
+  echo "${HOME}/bin does not exist and could not create it."
+  echo "Exiting without linking bin-scripts.."
+  exit 2
+fi
+
 
 echo "All done! Exiting!"
