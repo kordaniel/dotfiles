@@ -9,4 +9,6 @@
 	name = Daniel Korpela
 	email = 42967512+kordaniel@users.noreply.github.com
 [push]
-	default = matching
+        default = matching
+[core]
+        excludesfile = ~/.gitignore-global

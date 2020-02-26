@@ -27,7 +27,7 @@ fi
 
 echo "Attempting to compile $input to $output..."
 
-g++ -Wall -Wextra -Wshadow -fsanitize=undefined $input -o $output -O2
+g++ -std=c++11 -Wall -Wextra -Wshadow -fsanitize=undefined $input -o $output -O2
 #g++ -std=c++11 -O2 -Wall $input -o $output
 
 if [[ $? -eq 0 ]]; then
