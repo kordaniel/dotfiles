@@ -84,7 +84,7 @@ set copyindent		" use existing indents for new indents
 set preserveindent	" save as much indent structure as possible
 
 set number		" show linenumbers!!
-set relativenumber
+"set relativenumber
 "set ruler
 set cursorline
 set hlsearch		" highlight search matches
