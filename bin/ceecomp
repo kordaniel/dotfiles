@@ -3,36 +3,47 @@
 # Helper script to compile cpp-files. Takes one argument
 # which is the cpp-file and then compiles it.
 
+# Copyright (C) 2020 Daniel Korpela.
+# Permission to copy and modify is hereby granted,
+# free of charge and without warranty of any kind,
+# to any person obtaining a copy of this script.
+
+CPPEXT=cpp
+CC=g++
+CCFLAGS="-std=c++11 -Wall -Wextra -Wshadow -fsanitize=undefined -O2"
+#CCFLAGS="-std=c++11 -Wall -O2"
+
 # Check that we have exactly one argument
 if [[ $# -ne 1 ]]; then
-  echo "Pleae pass one single cpp-file as argument"
+  echo "Please pass one single cpp-file as argument"
   exit 1
 fi
 
 # Argument must be a filename that ends in .cpp
-if [[ ! $1 =~ \. ]] || [[ ${1##*.} != "cpp" ]]; then
-  echo "Bad argument. The filename must end in .cpp"
+if [[ ! $1 =~ \. ]] || [[ ${1##*.} != $CPPEXT ]]; then
+  echo "Bad argument. The filename must end in $CPPEXT"
   exit 1
 fi
 
 input=$1
 output=${1%.*}
 
-# Check that we have an valid name for the output
+# Check that we have a valid name for the output
 if [[ -z "${output// }" ]]; then
   echo "Bad argument. This script will output an binary"
   echo "with the same name as the input without the extension."
-  echo "Your argument resulted in an empty filename."
+  echo "Your argument \"$input\" resulted in an empty filename."
+  exit 1
 fi
 
 echo "Attempting to compile $input to $output..."
 
-g++ -std=c++11 -Wall -Wextra -Wshadow -fsanitize=undefined $input -o $output -O2
+$CC $CCFLAGS $input -o $output
+#g++ -std=c++11 -Wall -Wextra -Wshadow -fsanitize=undefined $input -o $output -O2
 #g++ -std=c++11 -O2 -Wall $input -o $output
 
 if [[ $? -eq 0 ]]; then
-  #chmod u+x $output
-  echo "All done succesfully"
+  echo "...All done succesfully"
 else
-  echo "Error compiling"
+  echo "!!! Error compiling"
 fi
