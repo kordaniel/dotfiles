@@ -6,6 +6,8 @@ alias ....='cd ../../..'
 alias ...='cd ../..'
 alias ..='cd ..'
 
+alias ccat='highlight --out-format=ansi'
+
 alias cman='man -Hlinks2'
 alias melkki='ssh melkki.cs.helsinki.fi'
 alias melkinpaasi='ssh melkinpaasi.cs.helsinki.fi'
