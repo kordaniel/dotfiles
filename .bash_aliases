@@ -9,10 +9,13 @@ alias ..='cd ..'
 alias ccat='highlight --out-format=ansi'
 
 alias cman='man -Hlinks2'
+alias pangolin='ssh pangolin.it.helsinki.fi'
+alias markka='ssh markka.it.helsinki.fi'
 alias melkki='ssh melkki.cs.helsinki.fi'
 alias melkinpaasi='ssh melkinpaasi.cs.helsinki.fi'
-alias melkinkari='ssh melkinkari.cs.helsinki.fi'
-alias melkinphysics='ssh login.physics.helsinki.fi'
+alias melkinkari='ssh melkinkari.cs.helsinki.fi' # Old Cubbli 16.04 (03/2020)
+#alias melkinphysics='ssh login.physics.helsinki.fi' #from ~March 2020 this is known as melkinkari.
+alias pultti='ssh pultti.it.helsinki.fi' # Larger physical machine with 256G Ram and Xeon E5-2620 6c/12t cpu
 
 # Subfunction needed by repeat().
 _seq() {
