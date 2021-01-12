@@ -172,8 +172,9 @@ def price_printer(refresh_event):
         print_price(price_current)
 
         if not refresh_event.is_set():
-            if refresh_event.wait(UPDATE_INTERVAL['freq']):
-                refresh_event.clear()
+            refresh_event.wait(UPDATE_INTERVAL['freq'])
+
+        refresh_event.clear()
 
 
 def keyb_listener_handler(kb, refresh_event):
