@@ -20,7 +20,7 @@
 # https://docs.coincap.io
 
 
-import sys, os, threading, time, urllib.request, json
+import sys, os, threading, urllib.request, json
 from datetime import datetime
 
 if os.name == 'nt':
@@ -133,8 +133,11 @@ def fetch_price():
 
 def parse_price_json(current, previous):
     cur_price = float(current['data']['priceUsd'])
-    change = 100 if not previous else \
-        100 * (cur_price - previous['price']) / previous['price']
+
+    change = 100
+    if previous:
+        change *= (cur_price - previous['price']) / previous['price']
+
     return {
         'time':  datetime.fromtimestamp(int(current['timestamp']) // 1000),
         'name':  current['data']['name'],
@@ -144,34 +147,36 @@ def parse_price_json(current, previous):
 
 
 def print_price(data):
-    if data['change'] < 0:
-        # Use red font
-        cur_price = f'\033[31m{data["price"]:.2f}\033[39m'
-    else:
-        # Use green font
-        cur_price = f'\033[32m{data["price"]:.2f}\033[39m'
+    change = ''.join((
+        # Red font - for negative % and else  - Green font
+        f'\033[91m' if data['change'] < 0 else '\033[92m',
+        f'{data["change"]:+5.2f}\033[39m%.'
+    ))
 
     msg = (
         f'{data["time"].strftime("%d.%m.%y %H:%M.%S")} '
-        f'{data["name"]} price: ${cur_price} '
-        f'{data["change"]:5.2f}%.'
+        f'{data["name"]} price: ${data["price"]:0,.2f} '
+        f'{change}'
     )
+
     print(msg)
 
 
-def price_printer():
+def price_printer(refresh_event):
     price_previous = None
     price_current  = None
 
     while True:
+        price_previous = price_current
         price_current = parse_price_json(fetch_price(), price_previous)
         print_price(price_current)
-        price_previous = price_current
 
-        time.sleep(UPDATE_INTERVAL['freq'])
+        if not refresh_event.is_set():
+            if refresh_event.wait(UPDATE_INTERVAL['freq']):
+                refresh_event.clear()
 
 
-def keyb_listener_handler(kb):
+def keyb_listener_handler(kb, refresh_event):
     # Listens to keyboard inputs and updates the frequency on correct input.
     # use + to increase and - to decrease the frequency.
     # Use Ctrl+C to exit the app.
@@ -193,14 +198,17 @@ def keyb_listener_handler(kb):
             elif c == '-':
                 UPDATE_INTERVAL['freq'] *= 2
             print(f'Set updating freq to: {UPDATE_INTERVAL["freq"]:.1f} seconds.')
+            refresh_event.set()
 
 
 def main(kb):
+    refresh_event = threading.Event()
+
     print(f'Using default polling frequency of {UPDATE_INTERVAL["freq"]:.1f} seconds.')
-    price_printer_thread = threading.Thread(target=price_printer, args=(), daemon=True)
+    price_printer_thread = threading.Thread(target=price_printer, args=(refresh_event, ), daemon=True)
     price_printer_thread.start()
 
-    keyb_listener_handler(kb)
+    keyb_listener_handler(kb, refresh_event)
 
 
 if __name__ == '__main__':
