@@ -33,7 +33,7 @@ if [ "$#" -ge 2 ]; then
   LANGUAGE=$2
 fi
 
-REQ_TOOLS=("ps" "tail" "stty" "grep" "sed")
+REQ_TOOLS=("ps" "head" "tail" "stty" "grep" "cut" "tr")
 REQ_MET=1
 
 # NARROW_VER flag is set if the user has all the $REQ_TOOLS
@@ -51,10 +51,10 @@ for t in ${REQ_TOOLS[@]}; do
 done
 
 if [ "$REQ_MET" -eq 1 ]; then
-  TERMINAL="$(ps h -p $$ -o tty | tail +2)"
+  TERMINAL="$(ps h -p $$ -o tty | grep -v TTY)"
   TERMINALPATH="/dev/${TERMINAL}"
   # $TERMCOLS holds the number of columns in the current terminal
-  TERMCOLS=$(stty -a < $TERMINALPATH | grep -o -E '.{0,4}columns' | sed -n -e 's/ columns$//p')
+  TERMCOLS=$(stty -a < $TERMINALPATH | head -n1 | cut -f3 -d ";" | tr -dc "0-9")
 
   if [ "$TERMCOLS" -lt 63 ]; then
     NARROW_VER="0"
