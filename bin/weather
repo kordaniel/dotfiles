@@ -64,10 +64,10 @@ if [ "$REQ_MET" -eq 1 ]; then
 fi
 
 
-BASE_URL='https://wttr.in'
-LOCATION="/${CITY}"
-OPTIONS="?MFq${NARROW_VER}&lang=${LANGUAGE}"
+BASE_URL="https://wttr.in"
+LOCATION="${CITY}"
+OPTIONS="MFq${NARROW_VER}&lang=${LANGUAGE}"
 
-URL="${BASE_URL}${LOCATION}${OPTIONS}"
+COMMAND="curl -4 '${BASE_URL}/${LOCATION}?${OPTIONS}'"
+eval "$COMMAND"
 
-curl -4 "${URL}"
