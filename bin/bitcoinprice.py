@@ -4,11 +4,15 @@
 # price to the console.
 
 # USAGE:
-# Change updating frequency with the keys '+' and '-' and
-# exit the program with Ctrl+C
+# If you wish to compare the current price of bitcoin to any given price,
+# just pass the base price as the only argument to this script.
+# - Change updating frequency with the keys '+' and '-'
+# - Refresh (get the latest price) with 'r'
+# - Exit the program with Ctrl+C
 
 # Tested to work on Macos 10.15 Catalina
-# Should work on Windows (NOT tested) if the msvcrt module is available.
+# Should also work on Linux and even on Windows (NOT tested)
+# if the msvcrt module is available.
 
 # Copyright (C) 2021 Daniel Korpela.
 # Permission to copy and modify is hereby granted,
@@ -20,7 +24,7 @@
 # https://docs.coincap.io
 
 
-import sys, os, threading, urllib.request, json
+import sys, os, threading, math, urllib.request, json
 from datetime import datetime
 
 if os.name == 'nt':
@@ -31,7 +35,7 @@ else:
     from select import select
 
 
-UPDATE_INTERVAL = {'freq': float(5 * 60)} #5 # In minutes
+UPDATE_INTERVAL = {'freq': float(5 * 60)} # In minutes
 url = 'https://api.coincap.io/v2/assets/bitcoin'
 req = urllib.request.Request(
         url=url,
@@ -131,44 +135,65 @@ def fetch_price():
     return json.loads(urllib.request.urlopen(req).read())
 
 
-def parse_price_json(current, previous):
+def parse_price_json(current, previous, base_price):
     cur_price = float(current['data']['priceUsd'])
 
-    change = 100
+    change = None
+    change_base = None
+
     if previous:
-        change *= (cur_price - previous['price']) / previous['price']
+        change = 100 * (cur_price - previous['price']) / previous['price']
+
+    if base_price:
+        change_base = 100 * (cur_price - base_price) / base_price
 
     return {
         'time':  datetime.fromtimestamp(int(current['timestamp']) // 1000),
         'name':  current['data']['name'],
         'price': cur_price,
-        'change': change
+        'change': change,
+        'change_base': change_base
     }
 
 
 def print_price(data):
-    change = ''.join((
-        # Red font - for negative % and else  - Green font
-        f'\033[91m' if data['change'] < 0 else '\033[92m',
-        f'{data["change"]:+5.2f}\033[39m%.'
+    def change_str(val: float):
+        # Returns the float val as a signed colored str with
+        # 2 decimal precision for abs(val):s under 10 and 1 decimal precision
+        # for larger val:s. Green for val >= 0 and red otherwise.
+        # That is, usually with expected values this should return
+        # a string with the width of 6, including +-% signs, but
+        # the decimal point might move around.
+        if val == None:
+            return ' ' * 6
+
+        return ''.join((
+            f'\033[91m' if val < 0 else '\033[92m',
+            f'{val:+5.2f}' if abs(val) < 10 else f'{val:+5.1f}',
+            '\033[39m%'
+        ))
+
+    change = ' '.join(map(
+        change_str,
+        (c for c in (data['change'], data['change_base']))
     ))
 
-    msg = (
-        f'{data["time"].strftime("%d.%m.%y %H:%M.%S")} '
-        f'{data["name"]} price: ${data["price"]:0,.2f} '
+    msg = ' '.join((
+        f'{data["time"].strftime("%d.%m.%y %H:%M.%S")}',
+        f'{data["name"]}: ${data["price"]:0,.2f}',
         f'{change}'
-    )
+    ))
 
     print(msg)
 
 
-def price_printer(refresh_event):
+def price_printer(refresh_event, base_price: float = None):
     price_previous = None
     price_current  = None
 
     while True:
         price_previous = price_current
-        price_current = parse_price_json(fetch_price(), price_previous)
+        price_current = parse_price_json(fetch_price(), price_previous, base_price)
         print_price(price_current)
 
         if not refresh_event.is_set():
@@ -178,35 +203,47 @@ def price_printer(refresh_event):
 
 
 def keyb_listener_handler(kb, refresh_event):
-    # Listens to keyboard inputs and updates the frequency on correct input.
-    # use + to increase and - to decrease the frequency.
+    # Listens to keyboard inputs and updates the frequency or refreshes the
+    # app with correct input.
     # Use Ctrl+C to exit the app.
 
     while True:
         # This function will handle all the input needed and it is
-        # run in it's own thread, so we can block the stdin stream.
-        # by bypassing the kbhit-check =>
-        #if kb.kbhit():
-
+        # run in its own thread, so we can block the stdin stream
+        # since we are using an unbuffered terminal.
         c = kb.getch()
-        #if ord(c) == 27: # ESC
-        #    break
-        #elif c == 'q':
-        #    break
-        if c in ['+', '-']:
+
+        if c in ['r', '+', '-']:
             if c == '+':
                 UPDATE_INTERVAL['freq'] /= 2
             elif c == '-':
                 UPDATE_INTERVAL['freq'] *= 2
-            print(f'Set updating freq to: {UPDATE_INTERVAL["freq"]:.1f} seconds.')
+            if c != 'r':
+                print(f'Set updating freq to: {UPDATE_INTERVAL["freq"]:.1f} seconds.')
             refresh_event.set()
 
 
-def main(kb):
+def main(kb, base_price: float = None):
     refresh_event = threading.Event()
 
     print(f'Using default polling frequency of {UPDATE_INTERVAL["freq"]:.1f} seconds.')
-    price_printer_thread = threading.Thread(target=price_printer, args=(refresh_event, ), daemon=True)
+
+    if not base_price:
+        msg = ' '.join((
+            'TOPTIP: You can pass a decimal number as the only argument to',
+            'this script if you want to compare the current price to a',
+            'given price!'
+        ))
+        print(msg)
+    else:
+        print(f'Using {base_price:.2f} as the base price to compare the current price to.')
+
+    print('Exit this application with Ctrl+C.')
+
+    price_printer_thread = threading.Thread(
+        target=price_printer,
+        args=(refresh_event, base_price), daemon=True
+    )
     price_printer_thread.start()
 
     keyb_listener_handler(kb, refresh_event)
@@ -214,8 +251,18 @@ def main(kb):
 
 if __name__ == '__main__':
     try:
+        base_price = None
+
+        if len(sys.argv) > 1:
+            base_price = float(sys.argv[1])
+            if base_price < math.nextafter(0, math.inf):
+                raise ValueError
+
         kb = KBHit()
-        main(kb)
+        main(kb, base_price)
+    except ValueError as ve:
+        print('Usage: Give a positive decimalnumber as the only argument as the base price to compare to')
+        print('Usage:', sys.argv[0], '[float]')
     except KeyboardInterrupt as ke:
         print('Exiting..', ke)
         kb.set_normal_term()
