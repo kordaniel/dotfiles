@@ -1,150 +1,183 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# This is an script to symlink all the dotfiles
-# living in this directory to the users ~.
-# It will create an backup of the existing files
-# into the $BACKUPDIR, where 2 newest backups are
-# kept. Should not be run as root.
-#
+# This script will setup the dotfiles and executables
+# contained in this repository. It will symlink all
+# dotfiles and all files inside the bin-directory
+# to the users ~ -dir.
+
+# It will overwrite any existing file, but attempt to make
+# a backup of the original file if they exist. Symlinks
+# are not backed up.
+
+# It keeps 2 iterations of backups, but NOTE that it is
+# a simple script with very little logic in it. This means
+# that if the script is run twice, with no change to the
+# original files, then both backups will be equal.
+
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# NOTE1: This script only deals with the actual
-# dotfiles. Directories, such as etc needs to
+# NOTE1: This script only deals with the actual dotfiles
+# and executables. Directories, such as etc (vim) needs to
 # be handled otherwise, manually for example!
 #
-# NOTE2: This script only checks that there exists
-# an backup. So it may be that something goes wrong
-# when trying to create a fresh backup, and the script
-# will continue working, even if it failed to create
-# a new backup of the current file.
-#
-# NOTE3: On most linux system symlink permissions
+# NOTE2: On most linux system symlink permissions
 # don't matter. The actual permissions will be
 # the ones that the target file has. So make sure
 # the dotfiles in THIS directory has appropriate
-# permissions.
+# permissions and flags set.
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #
 # USAGE:
-# chmod u+x setup.sh <- should not be needed, git should handle
+# Simply run
 # ./setup.sh
+# from inside the cloned repository.
 #
-# Copyright (C) 2020 Daniel Korpela.
+# Copyright (C) 2020,2021 Daniel Korpela.
 # Permission to copy and modify is hereby granted,
 # free of charge and without warranty of any kind,
 # to any person obtaining a copy of this script.
 
-BACKUPDIR=${HOME}/.dotfiles_backup
 
-echo "Attempting to create symlinks"
-echo "-----------------------------"
-echo ""
+BACKUPDIR="${HOME}/.dotfiles_backup"
 
-if [ ! -d "$BACKUPDIR" ]; then
-  mkdir $BACKUPDIR
-  echo "Created $BACKUPDIR for backups!"
-  echo ""
-fi
 
-if [ ! -d "$BACKUPDIR" ]; then
-  echo "Could not create $BACKUPDIR for backups!"
-  echo "Exiting with nothing done!"
-  exit 1
-fi
-
-for f in .*; do
-  if [[ -f $f ]]; then
-    # Backup existing files if they exist
-    if [[ -f ~/$f ]]; then
-      echo "Backing up ~/${f}..."
-      # Backup the backup..
-      [[ -f ${BACKUPDIR}/${f} ]] && mv -v ${BACKUPDIR}/${f} ${BACKUPDIR}/${f}.old
-      mv -iv ~/${f} ${BACKUPDIR}/${f}
-    
-      if [[ ${BACKUPDIR}/${f} ]]; then
-        echo "Backup created as ${BACKUPDIR}/${f}"
-      else
-        echo ""
-        echo "!! Something went wrong when backing up ~/$f !!"
-        echo "!! Exiting. You should investigate this issue! !!"
-        exit 1
-      fi
-    else
-      echo "File ~/${f} not found, continuing!"
-    fi
-    
-    # At this point the file does not exist in ~.
-    # So we create an symlink and check that it exists.
-    echo "Creating symlink..."
-    ln -sfnv ${PWD}/${f} ~/${f}
-
-    if [[ ! -f ~/${f} ]]; then
-      echo ""
-      echo "!!! Something went wrong when trying            !!!"
-      echo "!!! to create symlink:                          !!!"
-      echo "!!! ${PWD}/${f} ~/${f} !!!"
-      echo "!!! Exiting. You should investigate this issue! !!!"
-      exit 2
-    fi
-
-    echo "Done!"
-    echo ""
-  fi
-done
-
-[ ! -d "${HOME}/bin" ] && mkdir ${HOME}/bin
-
-if [ -d "${HOME}/bin" ]; then
-  [ ! -d ${BACKUPDIR}/bin ] && mkdir ${BACKUPDIR}/bin
-  if [ ! -d ${BACKUPDIR}/bin ]; then
-    echo "Could not create ${BACKUPDIR}/bin"
-    echo "Exiting without linking bin-scripts"
-    echo "You should investigate this issue!"
-    exit 2
-  fi
-
-  for f in bin/*; do
-    if [[ -f $f ]]; then
-      # Backup existing files if they exist
-      if [[ -f ${HOME}/${f} ]]; then
-        echo "Backing up ${HOME}/${f}..."
-        # Backup the backup..
-        [[ -f ${BACKUPDIR}/${f} ]] && mv -v ${BACKUPDIR}/${f} ${BACKUPDIR}/${f}.old
-        mv -iv ${HOME}/$f ${BACKUPDIR}/$f
-
-        if [[ ${BACKUPDIR}/${f} ]]; then
-          echo "Backup created as ${BACKUPDIR}/${f}"
-        else
+function check_create_dir {
+    # Creates the directory passed as the first argument if it's
+    # not already present in the file system. Exits with error code 1
+    # if the directory could not be created.
+    if [ ! -d "$1" ]; then
+      mkdir $1
+      if [ "$?" -eq 0 ]; then
+          echo "Created \`$1\` $2"
           echo ""
-          echo "!! Something went wrong when backing up $HOME/$f !!"
-          echo "!! Exiting. You should investigate this issue !!"
-          exit 2
-        fi
-      else
-        echo "File ${HOME}/${f} not found, continuing!"
       fi
+    fi
 
-      echo "Creating symlink..."
-      ln -sfnv ${PWD}/${f} ${HOME}/${f}
-    
-      if [[ ! -f ${HOME}/${f} ]]; then
+    if [ ! -d "$1" ]; then
+      echo "Could not create \`$1 $2\`"
+      echo "Exiting with no changes!"
+      exit 1
+    fi
+}
+
+
+function backup_file {
+    # Backup the file passed as argument if it is a file
+    # and not a symlink. Backup is defined as moving the
+    # file to the backup-directory (deleting the orig).
+
+    if [ "$#" -ne 2 ]; then
+        echo "function backup_file called with illegal num of parameters"
+        exit 5
+    fi
+
+    local f=$1
+    local backupdir=$2
+
+    if [ -f "${HOME}/${f}" ] && [ ! -h "${HOME}/${f}" ]; then
+        echo "Backing up ${HOME}/${f}..."
+
+        # Backup the backup..
+        [ -f "${backupdir}/${f}" ] && mv -v "${backupdir}/${f}" "${backupdir}/${f}.old"
+
+        # Backup the original file
+        mv -iv "${HOME}/${f}" "${backupdir}/${f}"
+
+        if [ "$?" -eq 0 ] && [ -f "${backupdir}/${f}" ]; then
+            echo "Backup created as (unless you got a prompt and selected n): \`${backupdir}/${f}\`"
+        else
+            echo ""
+            echo "!! Something went wrong when trying to backup: \`${HOME}/${f}\` !!"
+            echo "!! Exiting. You should investigate this issue! !!"
+            exit 2
+        fi
+    fi
+}
+
+
+function symlink_file {
+    # Creates a symlink from the file passed as argument to the
+    # home directory. Overwrites the existing file.
+    if [ "$#" -ne 1 ]; then
+        echo "function symlink_file called with illegal num of parameters"
+        exit 5
+    fi
+
+    local f=$1
+    ln -sfnv "${PWD}/${f}" "${HOME}/${f}"
+    if [ "$?" -eq 0 ] && [ ! -f "${HOME}/${f}" ]; then
         echo ""
         echo "!!! Something went wrong when trying            !!!"
         echo "!!! to create symlink:                          !!!"
-        echo "!!! ${PWD}/${f} ${HOME}/${f} !!!"
-        echo "!!! Exiting. You should investigate this issure !!!"
-        exit 2
-      fi
-
-      echo "Done!"
-      echo ""
+        echo "!!! ${PWD}/${f} -> ${HOME}/${f} !!!"
+        echo "!!! Exiting. You should investigate this issue! !!!"
+        exit 3
     fi
-  done
+}
 
-else
-  echo "${HOME}/bin does not exist and could not create it."
-  echo "Exiting without linking bin-scripts.."
-  exit 2
-fi
 
+function setup_dotfiles {
+    # First attempts to backup all the dotfiles in the users home directory
+    # with the same name as the dotfiles available in the current directory
+    # this script is run from. After that attempts to symlink all the
+    # dotfiles from the current dir to the users pwd.
+
+    check_create_dir $BACKUPDIR "for backups!"
+
+    echo "Backing up and symlinking dotfiles.."
+    echo "------------------------------------"
+    echo ""
+
+    local f
+    for f in .*; do
+        if [ -f "$f" ]; then
+            backup_file $f $BACKUPDIR
+
+            # At this point the file does not exist in ~. => create symlink
+            symlink_file $f
+            echo ""
+        fi
+    done
+
+    echo "Done!"
+    echo "-----"
+    echo ""
+}
+
+
+function setup_binfiles {
+    # First attempts to backup all the executables in the users ~/bin directory
+    # with the same name as the executables available in the $PWD/bin directory
+    # this script is run from. After that attempts to symlink all the
+    # dotfiles from the current executables dir to the users ~/bin -directory.
+
+    # This function assumes that all files living inside the bin-directory
+    # are executables, it is not tested for!
+
+    check_create_dir "${HOME}/bin" "for executables!"
+    check_create_dir "${BACKUPDIR}/bin" "for executables backups!"
+
+    echo "Backing up and symlinking executables.."
+    echo "---------------------------------------"
+    echo ""
+
+    local f
+    for f in bin/*; do
+        if [ -f "$f" ]; then
+            backup_file $f $BACKUPDIR
+
+            # At this point the file does not exist in ~/bin. => create symlink
+            symlink_file $f
+            echo ""
+        fi
+      done
+
+     echo "Done!"
+     echo "-----"
+     echo ""
+}
+
+
+setup_dotfiles
+setup_binfiles
 
 echo "All done! Exiting!"
