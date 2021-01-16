@@ -3,6 +3,7 @@
 # Script used to update both MacOS and Linux (debian-based with apt-get)
 # based systems.
 
+echo "Attempting to upgrade packages"
 if [[ "$OSTYPE" == "darwin"* ]] && command -v brew &> /dev/null; then
     brew update
     brew upgrade
@@ -20,10 +21,15 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]] && command -v apt-get &> /dev/null; then
     #    echo "$1" | sudo -S -k apt-get upgrade
     #fi
     #---------------------------------------------------------------------------
-    sudo apt-get update
-    sudo apt-get upgrade
+    sudo apt-get update && sudo apt-get upgrade
+else
+    echo "You are running an unsupported system, no package manager found"
+    echo "No packages has been updated!"
 fi
 
+echo "Attempting to upgrade dotfiles"
 if [ -d "${HOME}/dotfiles" ]; then
     git -C "${HOME}/dotfiles" pull
 fi
+
+echo "All done, exiting"
