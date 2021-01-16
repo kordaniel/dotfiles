@@ -1,10 +1,6 @@
 #login shells
 PATH="$PATH:~/bin"
 
-if [ -f ~/.bash_aliases ]; then
-    . ~/.bash_aliases
-fi
-
-if [ -r ~/.bashrc ]; then
-  source ~/.bashrc
-fi
+[ -r ~/.bash_aliases ] && . ~/.bash_aliases
+[ -r ~/.bashrc ] && source ~/.bashrc
+[ -r "/usr/local/etc/profile.d/bash_completion.sh" ] && . "/usr/local/etc/profile.d/bash_completion.sh"

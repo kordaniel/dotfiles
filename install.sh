@@ -18,6 +18,7 @@
 # These all should be available on HomeBrew as well, but we prefer to use
 # apt-get on Linux.
 APPS=(
+    "bash-completion"
     "git"
     "highlight"
     "htop"
