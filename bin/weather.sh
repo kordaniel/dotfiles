@@ -20,7 +20,7 @@ if ! command -v curl &> /dev/null; then
 fi
 
 BASE_URL="https://v2.wttr.in"
-OPTIONS="M"
+OPTIONS="AFM"
 LOCATION='Helsinki'
 LANGUAGE='en'
 
@@ -56,7 +56,7 @@ if [ "$REQ_MET" -eq 1 ]; then
   # V2 requires width of 74 for full forecast
   if [ "$TERMCOLS" -lt 74 ]; then
     BASE_URL="https://wttr.in"
-    OPTIONS='format=%l:+%t+%c+(feels+like:+%f),+%w+%p\n&M'
+    OPTIONS="format=%l:+%t+%c+(feels+like:+%f),+%w+%p\n&${OPTIONS}"
   fi
 fi
 
