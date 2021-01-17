@@ -7,7 +7,8 @@
 #
 # Uses the API at https://wttr.in
 # API documentation: https://wttr.in/:help
-
+#                    https://github.com/chubin/wttr.in
+#
 # Copyright (C) 2021 Daniel Korpela.
 # Permission to copy and modify is hereby granted,
 # free of charge and without warranty of any kind,
@@ -18,30 +19,25 @@ if ! command -v curl &> /dev/null; then
   exit 1
 fi
 
-CITY='Helsinki'
+BASE_URL="https://v2.wttr.in"
+OPTIONS="M"
+LOCATION='Helsinki'
 LANGUAGE='en'
 
 if [ "$#" -eq 0 ]; then
   echo "usage: $0 [Cityname] [language]"
-  echo "No arguments given, using location \`$CITY\`"
+  echo "No arguments given, using location \`$LOCATION\`"
   echo
 else
-  CITY=$1
+  LOCATION=$1
+  if [ "$#" -ge 2 ]; then
+    LANGUAGE=$2
+  fi
 fi
 
-if [ "$#" -ge 2 ]; then
-  LANGUAGE=$2
-fi
 
 REQ_TOOLS=("ps" "head" "tail" "stty" "grep" "cut" "tr")
 REQ_MET=1
-
-# NARROW_VER flag is set if the user has all the $REQ_TOOLS
-# installed and the terminal is not wide enough for full output
-# 0 = only current weather => narrowest
-# 1 = todays forecast
-# 1n = narrow version of todays forecast
-NARROW_VER="1"
 
 for t in ${REQ_TOOLS[@]}; do
   if ! command -v $t &> /dev/null; then
@@ -50,24 +46,20 @@ for t in ${REQ_TOOLS[@]}; do
   fi
 done
 
+
 if [ "$REQ_MET" -eq 1 ]; then
   TERMINAL="$(ps h -p $$ -o tty | grep -v TTY)"
   TERMINALPATH="/dev/${TERMINAL}"
   # $TERMCOLS holds the number of columns in the current terminal
   TERMCOLS=$(stty -a < $TERMINALPATH | head -n1 | cut -f3 -d ";" | tr -dc "0-9")
 
-  if [ "$TERMCOLS" -lt 63 ]; then
-    NARROW_VER="0"
-  elif [ "$TERMCOLS" -lt 125 ]; then
-    NARROW_VER="1n"
+  # V2 requires width of 74 for full forecast
+  if [ "$TERMCOLS" -lt 74 ]; then
+    BASE_URL="https://wttr.in"
+    OPTIONS='format=%l:+%t+%c+(feels+like:+%f),+%w+%p\n&M'
   fi
 fi
 
 
-BASE_URL="https://wttr.in"
-LOCATION="${CITY}"
-OPTIONS="MFq${NARROW_VER}&lang=${LANGUAGE}"
-
-COMMAND="curl -4 '${BASE_URL}/${LOCATION}?${OPTIONS}'"
+COMMAND="curl -4 -s -S '${BASE_URL}/${LOCATION}?${OPTIONS}&lang=${LANGUAGE}'"
 eval "$COMMAND"
-
