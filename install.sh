@@ -17,6 +17,12 @@
 # Here we specify the Applications that are usually available trough apt-get.
 # These all should be available on HomeBrew as well, but we prefer to use
 # apt-get on Linux.
+
+# NOTE: about macos and bash:
+# ---------------------------
+# bash-completion is for the old bash version that ships with macos ( versions < 4).
+# If we add bash to homebrew and thus update it to ver >= 4 then we need to
+# change bash-completion to bash-completion@2!!!!
 APPS=(
     "bash-completion"
     "git"
@@ -29,6 +35,7 @@ APPS=(
     "valgrind"
     "wget"
 )
+
 # Applications that are only available on HomeBrew
 APPS_BREW=( "bat" )
 
