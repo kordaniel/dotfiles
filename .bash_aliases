@@ -1,11 +1,11 @@
 # Set this to use a custom username for ssh logins.
-# If you set this varibale, consider running the command
+# If you set this variable, consider running the command
 # git update-index --skip-worktree .bash_aliases
 # in the root directory of the dotfiles repo to have git ignore
 # changes in this file. Then use
 # git update-index --no-skip-worktree .bash_aliases
 # to be able to stage new changes.
-_SSH_USERNAME="<username>"
+#_SSH_USERNAME="<username>"
 
 _SSH_COMMAND="ssh "
 
