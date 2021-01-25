@@ -1,13 +1,20 @@
-# Set this to use custom username for ssh logins
-#_SSH_USERNAME="<username>"
+# Set this to use a custom username for ssh logins.
+# If you set this varibale, consider running the command
+# git update-index --skip-worktree .bash_aliases
+# in the root directory of the dotfiles repo to have git ignore
+# changes in this file. Then use
+# git update-index --no-skip-worktree .bash_aliases
+# to be able to stage new changes.
+_SSH_USERNAME="<username>"
 
 _SSH_COMMAND="ssh "
 
-# Enable X11-forwarding if we have a X-server running
+# Enable X11-forwarding for ssh if we have a X-server running
 if [ ! -z ${DISPLAY+x} ]; then
     _SSH_COMMAND="${_SSH_COMMAND}-X "
 fi
 
+# Set custom username for ssh logins
 if [ ! -z ${_SSH_USERNAME+x} ]; then
     _SSH_COMMAND="${_SSH_COMMAND}${_SSH_USERNAME}@"
     unset _SSH_USERNAME
