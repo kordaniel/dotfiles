@@ -3,6 +3,13 @@
         s = status -sb
         # Show the diff between the latest commit and the current state
         d = !"git diff-index --quiet HEAD -- || clear; git --no-pager diff --patch-with-stat"
+        skip = "!f() { \
+                  git update-index --skip-worktree \"$@\"; \
+                }; f"
+        noskip = "!f() { \
+                    git update-index --no-skip-worktree \"$@\"; \
+                  }; f"
+        listskipped = !"git ls-files -v | grep '^S'"
 [pretty]
         colored = format:%Cred%h%Creset %s %Cgreen (%cr) %C(bold blue)%an%Creset
 [user]
