@@ -24,7 +24,7 @@
 # https://docs.coincap.io
 
 
-import sys, os, threading, math, urllib.request, json
+import sys, os, threading, urllib.request, json
 from datetime import datetime
 
 if os.name == 'nt':
@@ -175,7 +175,7 @@ def print_price(data):
 
     change = ' '.join(map(
         change_str,
-        (c for c in (data['change'], data['change_base']))
+        (data['change'], data['change_base'])
     ))
 
     msg = ' '.join((
@@ -242,7 +242,8 @@ def main(kb, base_price: float = None):
 
     price_printer_thread = threading.Thread(
         target=price_printer,
-        args=(refresh_event, base_price), daemon=True
+        args=(refresh_event, base_price),
+        daemon=True
     )
     price_printer_thread.start()
 
@@ -255,7 +256,7 @@ if __name__ == '__main__':
 
         if len(sys.argv) > 1:
             base_price = float(sys.argv[1])
-            if base_price < math.nextafter(0, math.inf):
+            if not base_price > 0:
                 raise ValueError
 
         kb = KBHit()
