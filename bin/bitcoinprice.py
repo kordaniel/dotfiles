@@ -90,6 +90,10 @@ class KBHit:
         self.new_term[3] = (self.new_term[3] & ~termios.ICANON & ~termios.ECHO)
         termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.new_term)
 
+        # Hide cursor
+        sys.stdout.write("\033[?25l")
+        sys.stdout.flush()
+
         # Support normal-terminal reset at exit
         atexit.register(self.set_normal_term)
 
@@ -98,6 +102,10 @@ class KBHit:
             return
 
         termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.old_term)
+
+        # Show cursor
+        sys.stdout.write("\033[?25h")
+        sys.stdout.flush()
 
     def getch(self):
         # Returns a keyboard character after kbhit() has been called.
@@ -144,8 +152,8 @@ def fetch_price():
     except Exception as e:
         if not STATUS['net_err_msg_printed']:
             STATUS['net_err_msg_printed'] = True
-            print("NET_ERROR:", e)
-            print("Will try to continue fetching the price in the background..")
+            print("\nNET_ERROR:", e)
+            print("Will try to continue fetching the price in the background..", end='\r')
         return None
 
 
@@ -198,7 +206,7 @@ def print_price(data):
         f'{change}'
     ))
 
-    print(msg)
+    print('\n', msg, end='\r', sep='')
 
 
 def price_printer(refresh_event, base_price: float = None):
@@ -244,7 +252,7 @@ def keyb_listener_handler(kb, refresh_event):
             elif c == '-':
                 STATUS['freq'] *= 2
             if c != 'r':
-                print(f'Set updating freq to: {STATUS["freq"]:.1f} seconds.')
+                print(f'\nSet updating freq to: {STATUS["freq"]:.1f} seconds.', end='\r')
             refresh_event.set()
 
 
@@ -290,6 +298,6 @@ if __name__ == '__main__':
         print('Usage: Give a positive decimalnumber as the only argument as the base price to compare to')
         print('Usage:', sys.argv[0], '[float]')
     except KeyboardInterrupt as ke:
-        print('Exiting..', ke)
+        print('\nExiting..', ke)
         kb.set_normal_term()
         sys.exit(0)
