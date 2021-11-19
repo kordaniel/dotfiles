@@ -25,3 +25,5 @@
     default = matching
 [core]
     excludesfile = ~/.gitignore-global
+[init]
+    defaultBranch = main
