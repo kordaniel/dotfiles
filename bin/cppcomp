@@ -1,49 +1,91 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Helper script to compile cpp-files. Takes one argument
-# which is the cpp-file and then compiles it.
+# Helper script to compile one single cpp-file.
 
-# Copyright (C) 2020 Daniel Korpela.
+# Copyright (C) 2020-2021 Daniel Korpela.
 # Permission to copy and modify is hereby granted,
 # free of charge and without warranty of any kind,
 # to any person obtaining a copy of this script.
 
 CPPEXT=cpp
 CC=g++
-CCFLAGS="-std=c++11 -Wall -Wextra -Wshadow -fsanitize=undefined -O2"
-#CCFLAGS="-std=c++11 -Wall -O2"
+CPPSTD="-std=c++11"
+CCFLAGS="-Wall -Wextra -Wshadow -Wconversion -fsanitize=undefined -fsanitize=address -g -pedantic"
 
-# Check that we have exactly one argument
-if [[ $# -ne 1 ]]; then
-  echo "Please pass one single cpp-file as argument"
-  exit 1
+function print_help {
+    echo "Helper script to compile one single C++ file."
+    echo "---------------------------------------------"
+    echo "Pass one single sourcefile with the extension .${CPPEXT}"
+    echo "as the argument to this script."
+    echo ""
+    echo "USAGE: $0 [options] sourcefile.cpp"
+    echo "OPTIONS:"
+    echo -e "\t-c\tSpecify the compiler to use: g++, g++[-10,-11], .."
+    echo -e "\t-h\tPrint this help message"
+    echo -e "\t-s\tSpecify the C++-version to use: 11, 17, .."
+    echo -e "\t-O\tEnable optimizations instead of debugflags"
+}
+
+if [[ $# -eq 0 ]]; then
+    print_help
+    exit 1
 fi
+
+# Grab the last argument and set it as the sourcefile
+for lastarg; do true; done
+SOURCEFILE=$lastarg
+
+while getopts ":hOc:s:" OPTION; do
+    case "${OPTION}" in
+        c)  CC=${OPTARG} ;;
+        h)
+            print_help
+            if [[ $# -eq 1 ]]; then
+                exit 0
+            else
+                echo ""
+            fi
+            ;;
+        s)  CPPSTD="-std=c++$OPTARG" ;;
+        O)  CCFLAGS="-O2 -Wall" ;;
+        *)
+            echo "Invalid option: ${OPTARG}"
+            echo ""
+            print_help
+            exit 1
+            ;;
+    esac
+done
+
+CCFLAGS+=" $CPPSTD"
 
 # Argument must be a filename that ends in .cpp
-if [[ ! $1 =~ \. ]] || [[ ${1##*.} != $CPPEXT ]]; then
-  echo "Bad argument. The filename must end in $CPPEXT"
+if [[ ! $SOURCEFILE =~ \. ]] || [[ ${SOURCEFILE##*.} != $CPPEXT ]]; then
+  echo "Bad argument. The filename must have the extension: .${CPPEXT}"
   exit 1
 fi
 
-input=$1
-output=${1%.*}
+input=$SOURCEFILE
+output=${SOURCEFILE%.*}
 
 # Check that we have a valid name for the output
 if [[ -z "${output// }" ]]; then
-  echo "Bad argument. This script will output an binary"
+  echo "Bad argument. This script will output a binary"
   echo "with the same name as the input without the extension."
-  echo "Your argument \"$input\" resulted in an empty filename."
+  echo "Your argument \"$input\" resulted in a empty filename."
   exit 1
 fi
 
 echo "Attempting to compile $input to $output..."
 
+# Uncomment to see the actual command
+#echo "Final command: $CC $CCFLAGS $input -o $output"
+
 $CC $CCFLAGS $input -o $output
-#g++ -std=c++11 -Wall -Wextra -Wshadow -fsanitize=undefined $input -o $output -O2
-#g++ -std=c++11 -O2 -Wall $input -o $output
 
 if [[ $? -eq 0 ]]; then
   echo "...All done succesfully"
 else
   echo "!!! Error compiling"
 fi
+
