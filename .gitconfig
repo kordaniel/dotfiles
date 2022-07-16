@@ -1,21 +1,29 @@
 [alias]
-        l = log --graph --pretty=colored
-        s = status -sb
-        # Show the diff between the latest commit and the current state
-        d = !"git diff-index --quiet HEAD -- || clear; git --no-pager diff --patch-with-stat"
-        skip = "!f() { \
-                  git update-index --skip-worktree \"$@\"; \
-                }; f"
-        noskip = "!f() { \
-                    git update-index --no-skip-worktree \"$@\"; \
-                  }; f"
-        listskipped = !"git ls-files -v | grep '^S'"
+    l = log --graph --pretty=colored
+    s = status -sb
+    # Show the diff between the latest commit and the current state
+    d = !"git diff-index --quiet HEAD -- || clear; git --no-pager diff --patch-with-stat"
+    # 3 aliases to handle files to be skipped from git history
+    skip = "!f() { \
+              git update-index --skip-worktree \"$@\"; \
+            }; f"
+    noskip = "!f() { \
+                git update-index --no-skip-worktree \"$@\"; \
+              }; f"
+    listskipped = !"git ls-files -v | grep '^S'"
+    # Remove local branches that have been merged to master by default,
+    # but you can pass a different one if you need to.
+    bclean = "!f() { \
+                git branch --merged ${1-master} | grep -v " ${1-master}$" | xargs git branch -d; \
+              }; f"
 [pretty]
-        colored = format:%Cred%h%Creset %s %Cgreen (%cr) %C(bold blue)%an%Creset
+    colored = format:%Cred%h%Creset %s %Cgreen (%cr) %C(bold blue)%an%Creset
 [user]
-	name = Daniel Korpela
-	email = 42967512+kordaniel@users.noreply.github.com
+    name = Daniel Korpela
+    email = 42967512+kordaniel@users.noreply.github.com
 [push]
-        default = matching
+    default = matching
 [core]
-        excludesfile = ~/.gitignore-global
+    excludesfile = ~/.gitignore-global
+[init]
+    defaultBranch = main

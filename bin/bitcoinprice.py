@@ -35,10 +35,14 @@ else:
     from select import select
 
 
-UPDATE_INTERVAL = {'freq': float(5 * 60)} # In minutes
-url = 'https://api.coincap.io/v2/assets/bitcoin'
-req = urllib.request.Request(
-        url=url,
+STATUS = {'freq': float(5 * 60),       # Updating interval, in seconds
+          'net_err_msg_printed': False # Set to true when err msg in printed
+                                       # and to False, when price is printed
+                                       # (print net-errors only once)
+}
+URL = 'https://api.coincap.io/v2/assets/bitcoin'
+REQ = urllib.request.Request(
+        url=URL,
         data=None,
         headers={
             'User-Agent': ' '.join((
@@ -47,6 +51,7 @@ req = urllib.request.Request(
                 'Chrome/87.0.4280.67 Safari/537.36'))
         }
 )
+
 
 class KBHit:
     '''
@@ -85,6 +90,10 @@ class KBHit:
         self.new_term[3] = (self.new_term[3] & ~termios.ICANON & ~termios.ECHO)
         termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.new_term)
 
+        # Hide cursor
+        sys.stdout.write("\033[?25l")
+        sys.stdout.flush()
+
         # Support normal-terminal reset at exit
         atexit.register(self.set_normal_term)
 
@@ -93,6 +102,10 @@ class KBHit:
             return
 
         termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.old_term)
+
+        # Show cursor
+        sys.stdout.write("\033[?25h")
+        sys.stdout.flush()
 
     def getch(self):
         # Returns a keyboard character after kbhit() has been called.
@@ -132,7 +145,16 @@ class KBHit:
 
 
 def fetch_price():
-    return json.loads(urllib.request.urlopen(req).read())
+    try:
+        raw_data = urllib.request.urlopen(REQ).read()
+        STATUS['net_err_msg_printed'] = False
+        return raw_data
+    except Exception as e:
+        if not STATUS['net_err_msg_printed']:
+            STATUS['net_err_msg_printed'] = True
+            print("\nNET_ERROR:", e)
+            print("Will try to continue fetching the price in the background..", end='\r')
+        return None
 
 
 def parse_price_json(current, previous, base_price):
@@ -184,7 +206,7 @@ def print_price(data):
         f'{change}'
     ))
 
-    print(msg)
+    print('\n', msg, end='\r', sep='')
 
 
 def price_printer(refresh_event, base_price: float = None):
@@ -192,12 +214,23 @@ def price_printer(refresh_event, base_price: float = None):
     price_current  = None
 
     while True:
-        price_previous = price_current
-        price_current = parse_price_json(fetch_price(), price_previous, base_price)
-        print_price(price_current)
+        raw_data = fetch_price()
+        if not raw_data is None:
+            price_previous = price_current
+            price_current = parse_price_json(
+                json.loads(raw_data),
+                price_previous,
+                base_price
+            )
+            print_price(price_current)
 
         if not refresh_event.is_set():
-            refresh_event.wait(UPDATE_INTERVAL['freq'])
+            sleep_time = STATUS['freq']
+            if raw_data is None:
+                # If we have network problems, we try to refresh more often!
+                sleep_time = max(5, sleep_time // 10)
+
+            refresh_event.wait(sleep_time)
 
         refresh_event.clear()
 
@@ -215,18 +248,18 @@ def keyb_listener_handler(kb, refresh_event):
 
         if c in ['r', '+', '-']:
             if c == '+':
-                UPDATE_INTERVAL['freq'] /= 2
+                STATUS['freq'] /= 2
             elif c == '-':
-                UPDATE_INTERVAL['freq'] *= 2
+                STATUS['freq'] *= 2
             if c != 'r':
-                print(f'Set updating freq to: {UPDATE_INTERVAL["freq"]:.1f} seconds.')
+                print(f'\nSet updating freq to: {STATUS["freq"]:.1f} seconds.', end='\r')
             refresh_event.set()
 
 
 def main(kb, base_price: float = None):
     refresh_event = threading.Event()
 
-    print(f'Using default polling frequency of {UPDATE_INTERVAL["freq"]:.1f} seconds.')
+    print(f'Using default polling frequency of {STATUS["freq"]:.1f} seconds.')
 
     if not base_price:
         msg = ' '.join((
@@ -265,6 +298,6 @@ if __name__ == '__main__':
         print('Usage: Give a positive decimalnumber as the only argument as the base price to compare to')
         print('Usage:', sys.argv[0], '[float]')
     except KeyboardInterrupt as ke:
-        print('Exiting..', ke)
+        print('\nExiting..', ke)
         kb.set_normal_term()
         sys.exit(0)
