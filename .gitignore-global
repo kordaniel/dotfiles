@@ -1,3 +1,4 @@
+
 # Misc
 dist
 dist-*
@@ -23,6 +24,8 @@ db.sqlite*
 *.war
 *.ear
 
+# Credentials
+.netrc
 
 # Python
 # Byte-compiled / optimized / DLL -files
@@ -37,7 +40,7 @@ develop-eggs/
 *.installed.cfg
 *.egg
 
-#Environments
+# Environments
 .env
 .venv
 env/
@@ -218,4 +221,3 @@ out/
 
 # JIRA plugin
 atlassian-ide-plugin.xml
-
